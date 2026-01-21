@@ -271,7 +271,7 @@
             border-radius: 5px;
             margin: 10px 0;
             box-sizing: border-box;
-            min-height: 60px;
+            min-height: 140px;
             resize: vertical;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
@@ -382,7 +382,7 @@
         }
     </style>
 </head>
-<body>
+<body spellcheck="false">
     <!-- Progress bar -->
     <div class="progress-bar" id="progress-bar">
         <div class="progress-bar-fill" id="progress-bar-fill"></div>
@@ -394,7 +394,7 @@
         <div id="options-container">
             <!-- Radio options will be inserted here -->
         </div>
-        <textarea id="text-input" class="text-input"></textarea>
+        <textarea id="text-input" class="text-input" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
     <div class="button-container">
         <button class="submit-button" onclick="handleSubmitClick()">Submit</button>
         <button class="cancel-button" onclick="handleCancelClick()">Cancel</button>
@@ -693,15 +693,20 @@
             if (typeof dialogData.message === 'string') {
                 __latestRawMessage = dialogData.message;
             }
-            
+            const textInput = document.getElementById('text-input');
+            if (dialogData.textAreaHeight && dialogData.textAreaHeight > 0 && textInput) {
+                textInput.style.minHeight = dialogData.textAreaHeight + 'px';
+            }
+
             // Create radio options if provided
             createRadioOptions(dialogData.predefinedOptions);
-            
+
             // Start timer if timeout is provided
             if (dialogData.timeout && dialogData.timeout > 0) {
                 startTimer(dialogData.timeout);
             }
         });
+
         
         // Listen for legacy dynamic content from the main process
         ipcRenderer.on('update-content', (event, content) => {

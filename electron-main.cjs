@@ -1,5 +1,7 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const path = require('path');
+
+Menu.setApplicationMenu(null);
 
 // Flag to track if the dialog is open
 let dialogWindow = null;
@@ -13,23 +15,34 @@ function createDialog(dialogData = null) {
   
   try {
     dialogWindow = new BrowserWindow({
-    width: 600,
-    height: 600,
+    width: 900,
+    height: 800,
     resizable: true,
     minimizable: true,
     maximizable: false,
+    autoHideMenuBar: true,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
     },
     title: title,
     alwaysOnTop: true,
-    skipTaskbar: true,
+    skipTaskbar: false,
+    show: true,
+    focus: true,
     icon: path.join(__dirname, 'assets/icon.png')
   });
+  dialogWindow.setMenu(null);
+  dialogWindow.setMenuBarVisibility(false);
 
   // Load the HTML content for the dialog
   dialogWindow.loadFile('dialog.html');
+  
+  dialogWindow.once('ready-to-show', () => {
+    dialogWindow.show();
+    dialogWindow.focus();
+    dialogWindow.setAlwaysOnTop(true, 'screen-saver');
+  });
 
   // Defense-in-depth: block all internal navigations and new windows
   try {
@@ -131,7 +144,8 @@ app.whenReady().then(() => {
     projectName: process.env.DIALOG_PROJECT_NAME || 'MCP Interactive Dialog',
     message: process.env.DIALOG_MESSAGE || 'Please provide your input:',
     predefinedOptions: JSON.parse(process.env.DIALOG_PREDEFINED_OPTIONS || '[]'),
-    timeout: parseInt(process.env.DIALOG_TIMEOUT || '60', 10)
+    timeout: parseInt(process.env.DIALOG_TIMEOUT || '60', 10),
+    textAreaHeight: parseInt(process.env.DIALOG_TEXTAREA_HEIGHT || '0', 10) || null
   };
   
   // Create and show the dialog

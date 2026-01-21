@@ -24,5 +24,23 @@ export const initialTools = [
       },
       required: ["projectName", "message"]
     }
+  },
+  {
+    name: "request_user_confirmation",
+    description: "Requests final confirmation or feedback from the user about a work summary. No timeout and no predefined options.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        projectName: {
+          type: "string",
+          description: "Identifies the context/project making the request"
+        },
+        summary: {
+          type: "string",
+          description: "Summary of the work completed to present to the user. Supports Markdown formatting."
+        }
+      },
+      required: ["projectName", "summary"]
+    }
   }
 ];

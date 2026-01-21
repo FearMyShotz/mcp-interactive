@@ -31,7 +31,7 @@ let electronProcess = null;
 let pendingRequests = new Map(); // Store pending ask_user requests
 
 // Function to start Electron GUI with initial data
-function startElectronGUIWithData(projectName, message, predefinedOptions = []) {
+function startElectronGUIWithData(projectName, message, predefinedOptions = [], timeoutOverride = null, textAreaHeight = null) {
   // Close existing process if any
   if (electronProcess) {
     electronProcess.kill();
@@ -40,28 +40,34 @@ function startElectronGUIWithData(projectName, message, predefinedOptions = []) 
   
   const mainPath = path.join(__dirname, 'electron-main.cjs');
   
+  const timeoutToUse = timeoutOverride != null ? timeoutOverride : dialogTimeout;
+  const textAreaHeightValue = textAreaHeight != null ? String(textAreaHeight) : '';
+  
   // Prepare dialog data as environment variables
   const env = {
     ...process.env,
     DIALOG_PROJECT_NAME: projectName,
     DIALOG_MESSAGE: message,
     DIALOG_PREDEFINED_OPTIONS: JSON.stringify(predefinedOptions),
-    DIALOG_TIMEOUT: dialogTimeout.toString(),
+    DIALOG_TIMEOUT: String(timeoutToUse),
     // Remove IDE environment variables
     VSCODE_PID: undefined,
     VSCODE_CWD: undefined,
     CURSOR_PID: undefined,
     CURSOR_CWD: undefined,
+    // Remove Node-mode flag
+    ELECTRON_RUN_AS_NODE: undefined,
     // Add variables for independent startup
     ELECTRON_IS_DEV: '0',
     NODE_ENV: 'production',
-    ELECTRON_RUN_AS_NODE: ''
+    DIALOG_TEXTAREA_HEIGHT: textAreaHeightValue
   };
   
   // Spawn Electron directly using the imported path
   electronProcess = spawn(electronExecutablePath, [mainPath], {
     stdio: ['pipe', 'pipe', 'pipe'],
     detached: false,
+    cwd: __dirname,
     env: env
   });
   
@@ -86,16 +92,17 @@ function startElectronGUIWithData(projectName, message, predefinedOptions = []) 
   
   electronProcess.stderr.on('data', (data) => {
     const message = data.toString().trim();
-    // console.error('Electron stderr:', message);
+    console.error('Electron stderr:', message);
   });
   
   electronProcess.on('close', (code) => {
-    // console.error('Electron process closed with code:', code);
+    console.error('Electron process closed with code:', code);
     electronProcess = null;
   });
 
   electronProcess.on('error', (err) => {
     console.error('Failed to start Electron GUI:', err.message);
+    console.error('Error stack:', err.stack);
   });
 }
 
@@ -112,7 +119,7 @@ function handleUserResponse(userResponse) {
       // Resolve with timeout message
       resolve({
         content: [{
-          text: "User did not reply: Timeout occurred.",
+          text: "User did not reply: Timeout occurred. Retry calling the function.",
           type: "text"
         }]
       });
@@ -120,7 +127,7 @@ function handleUserResponse(userResponse) {
       // Resolve with empty input message
       resolve({
         content: [{
-          text: "User replied with empty input.",
+          text: "User replied with empty input. Retry calling the function.",
           type: "text"
         }]
       });
@@ -172,10 +179,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 // Handle tool calls
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
-  
+
   if (name === "ask_user") {
     const { projectName, message, predefinedOptions } = args;
-    
+
     try {
       const result = await showDialog(projectName, message, predefinedOptions);
       return result;
@@ -183,7 +190,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       throw new Error(`Failed to show dialog: ${error.message}`);
     }
   }
-  
+
+  if (name === "request_user_confirmation") {
+    const { projectName, summary } = args;
+
+    return new Promise((resolve, reject) => {
+      const requestId = Date.now().toString();
+      pendingRequests.set(requestId, { resolve, reject });
+      startElectronGUIWithData(projectName, summary, [], 0, 300);
+    });
+  }
+
   throw new Error(`Unknown tool: ${name}`);
 });
 

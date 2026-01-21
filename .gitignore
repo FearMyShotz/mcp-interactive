@@ -48,3 +48,5 @@ coverage/
 # Test artifacts
 test-results/
 test-output/
+
+ignored/
