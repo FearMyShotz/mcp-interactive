@@ -1,19 +1,22 @@
 {
   "name": "mcp-interactive",
   "version": "0.2.1",
-  "description": "MCP Interactive server for LLM to user communication",
+  "description": "MCP Interactive server for LLM to enable user communication",
   "main": "index.js",
   "type": "module",
   "bin": {
-    "mcp-interactive": "./index.js"
+    "mcp-interactive": "./index.js",
+    "mcp-interactive-http": "./http_server.js"
   },
   "scripts": {
     "start": "node index.js",
+    "start:http": "node http_server.js",
     "test": "node test_interactive.js",
     "prepublishOnly": "npm test"
   },
   "files": [
     "index.js",
+    "http_server.js",
     "initial_tools.js",
     "electron-main.cjs",
     "dialog.html",

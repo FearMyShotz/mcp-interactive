@@ -26,7 +26,6 @@ function createDialog(dialogData = null) {
       contextIsolation: false
     },
     title: title,
-    alwaysOnTop: true,
     skipTaskbar: false,
     show: true,
     focus: true,
@@ -41,7 +40,6 @@ function createDialog(dialogData = null) {
   dialogWindow.once('ready-to-show', () => {
     dialogWindow.show();
     dialogWindow.focus();
-    dialogWindow.setAlwaysOnTop(true, 'screen-saver');
   });
 
   // Defense-in-depth: block all internal navigations and new windows
